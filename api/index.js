@@ -1,29 +1,35 @@
+export const config = {
+  runtime: "nodejs18.x"
+};
+
 export default async function handler(req, res) {
-  // CORS
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-
-  if (req.method === "OPTIONS") {
-    return res.status(200).end();
-  }
-
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method Not Allowed" });
-  }
-
-  const GAS_URL = "BURAYA_GOOGLE_APPS_SCRIPT_URL_GELECEK";
+  const GAS_URL = "https://script.google.com/macros/s/AKfycbxxvr6OPG5R-emW8WlquzZ1psFEn6Lbvt4dDHpdN8XWO494N7uCv3s4DhLreIhO59b-/exec";
 
   try {
-    const r = await fetch(GAS_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(req.body)
+    let body = null;
+
+    if (req.method === "POST") {
+      body = JSON.stringify(req.body || {});
+    }
+
+    const response = await fetch(GAS_URL, {
+      method: req.method,
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8"
+      },
+      body
     });
 
-    const data = await r.json();
-    return res.status(200).json(data);
-  } catch (e) {
-    return res.status(500).json({ error: e.toString() });
+    const text = await response.text();
+
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Content-Type", "application/json");
+    res.status(200).send(text);
+
+  } catch (err) {
+    res.status(500).json({
+      ok: false,
+      error: String(err)
+    });
   }
 }
